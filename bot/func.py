@@ -1,5 +1,7 @@
 import patterns
 from datetime import datetime
+import requests
+import db
 
 
 def handle_greeting(match=None):
@@ -7,6 +9,12 @@ def handle_greeting(match=None):
 
 def handle_farewell(match=None):
     return "До свидания! Хорошего дня!"
+
+def handle_name(match):
+    name = match.group(1)
+    user_id = hash(name) % 10000
+    db.save_user(user_id, name)
+    return f"Приятно познакомиться, {name}!"
 
 def get_current_time(match=None):
     now = datetime.now()
@@ -42,6 +50,25 @@ def handle_math(a, b, operation):
         return f"Результат: {a / b}"
     else:
         return "Неизвестная операция. Пожалуйста, используйте '+', '-', '*' или '/'."
+  
+def get_weather(location):
+    url = "http://api.weatherstack.com/current"
+    querystring = {"access_key": "d0eba72320d48e0dcb44f69a8dd98526", "query": location, "units": "m"}
+
+    try:
+        response = requests.get(url, params=querystring)
+        response.raise_for_status()
+    except requests.RequestException:
+        print(f"Ошибка при запросе к API: {response.status_code}")
+        return "Ошибка получения данных о погоде."
+
+    data = response.json()
+
+    temp = data["current"]["temperature"]
+    description = data["current"]["weather_descriptions"][0]
+    wind = data["current"]["wind_speed"]
+
+    return f"Погода в {location}: {temp}°C, {description}, скорость ветра: {wind} км/ч."
 
 def process_message(message: str):
     message = message.strip()
@@ -50,9 +77,3 @@ def process_message(message: str):
         if match:
             return handler(match)
     return "Извините, я не понимаю. Пожалуйста, попробуйте другое сообщение."
-
-def log_message(time, user, bot):
-    with open("chat_log.txt", "a", encoding = "utf-8") as log_file:
-        log_file.write(f"User: {time} {user}\n")
-        log_file.write(f"Bot: {time} {bot}\n")
-        log_file.write("-" * 40 + "\n")
