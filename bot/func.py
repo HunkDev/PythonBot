@@ -2,7 +2,10 @@ import patterns
 from datetime import datetime
 import requests
 import db
+import spacy
+import key
 
+nlp = spacy.load("ru_core_news_md")
 
 def handle_greeting(match=None):
     return "Здравствуйте! Чем могу помочь?"
@@ -50,10 +53,27 @@ def handle_math(a, b, operation):
         return f"Результат: {a / b}"
     else:
         return "Неизвестная операция. Пожалуйста, используйте '+', '-', '*' или '/'."
-  
+
+def extract_city(doc):
+    for ent in doc.ents:
+        if ent.label_ == "LOC":
+            lemma = ent[0].lemma_
+            if " " in lemma or "-" in lemma:
+                parts = [p.title() for p in lemma.split()]
+                return " ".join(parts)
+            return lemma.title()
+
+    for token in doc:
+        if token.pos_ == "PROPN" and token.ent_type_ == "":
+            lemma = token.lemma_.title()
+            if len(lemma) > 3:
+                return lemma
+    
+    return None
+
 def get_weather(location):
     url = "http://api.weatherstack.com/current"
-    querystring = {"access_key": "d0eba72320d48e0dcb44f69a8dd98526", "query": location, "units": "m"}
+    querystring = {"access_key": key.KEY, "query": location, "units": "m"}
 
     try:
         response = requests.get(url, params=querystring)
@@ -76,4 +96,15 @@ def process_message(message: str):
         match = pattern.match(message)
         if match:
             return handler(match)
+        
+    doc = nlp(message)
+
+    cities = [ent.text.strip() for ent in doc.ents if ent.label_ == "LOC"]
+
+    if cities:
+        city = extract_city(doc)
+
+        if city and any(kw in message.lower() for kw in {"погода", "температура", "градус", "прогноз", "дождь", "снег"}):
+            return get_weather(city)
+
     return "Извините, я не понимаю. Пожалуйста, попробуйте другое сообщение."
