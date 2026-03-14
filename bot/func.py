@@ -1,22 +1,46 @@
-import patterns
 from datetime import datetime
 import requests
 import db
 import spacy
 import key
+import states
 
 nlp = spacy.load("ru_core_news_md")
+WEATHER_INTENT_WORDS = {"погода", "погоду", "температура", "градус", "градусов", "прогноз", "холодно", "жарко", "дождь", "снег", "солнце"}
+
+global current_user
+current_user = None
+
+def handle_user(user):
+    id = hash(user) % 10000
+    result = db.get_user(id)
+    if result:
+        return result
+    else:
+        return None
 
 def handle_greeting(match=None):
-    return "Здравствуйте! Чем могу помочь?"
+    global current_user
+    user = handle_user(current_user)
+    if user:
+        return f"С возвращением, {user}! Чем могу помочь?"
+    else:
+        return "Здравствуйте! Чем могу помочь?"
 
 def handle_farewell(match=None):
-    return "До свидания! Хорошего дня!"
+    global current_user
+    user = handle_user(current_user)
+    if user:
+        return f"До встречи, {user}! хорошего дня!"
+    else:
+        return "До свидания! Хорошего дня!"
 
 def handle_name(match):
+    global current_user
     name = match.group(1)
     user_id = hash(name) % 10000
     db.save_user(user_id, name)
+    current_user = name
     return f"Приятно познакомиться, {name}!"
 
 def get_current_time(match=None):
@@ -71,6 +95,10 @@ def extract_city(doc):
     
     return None
 
+def has_weather_intent(text: str) -> bool:
+    text_lower = text.lower()
+    return any(word in text_lower for word in WEATHER_INTENT_WORDS)
+
 def get_weather(location):
     url = "http://api.weatherstack.com/current"
     querystring = {"access_key": key.KEY, "query": location, "units": "m"}
@@ -90,21 +118,13 @@ def get_weather(location):
 
     return f"Погода в {location}: {temp}°C, {description}, скорость ветра: {wind} км/ч."
 
-def process_message(message: str):
-    message = message.strip()
-    for pattern, handler in patterns.patterns:
-        match = pattern.match(message)
-        if match:
-            return handler(match)
-        
-    doc = nlp(message)
+def process_message(text: str):
+    text = text.strip()
+    if not text:
+        return "Напиши что-нибудь"
 
-    cities = [ent.text.strip() for ent in doc.ents if ent.label_ == "LOC"]
-
-    if cities:
-        city = extract_city(doc)
-
-        if city and any(kw in message.lower() for kw in {"погода", "температура", "градус", "прогноз", "дождь", "снег"}):
-            return get_weather(city)
-
-    return "Извините, я не понимаю. Пожалуйста, попробуйте другое сообщение."
+    message = states.manage_state(text)
+    if(message):
+        return message
+    else:
+        return "Что-то пошло не так"
