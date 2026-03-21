@@ -119,7 +119,7 @@ def get_weather(location):
     return f"Погода в {location}: {temp}°C, {description}, скорость ветра: {wind} км/ч."
 
 def process_message(text: str):
-    text = text.strip()
+    text = text.lower().strip()
     if not text:
         return "Напиши что-нибудь"
 

@@ -1,9 +1,48 @@
 import patterns
 import func
 import spacy
+import joblib
+
+model = joblib.load("intent_model.pkl")
 
 nlp = spacy.load("ru_core_news_md")
 current_state = "START"
+
+def predict_intent(text):
+    intent = model.predict([text])[0]
+
+    if hasattr(model, "predict_proba"):
+        proba = model.predict_proba([text]).max()
+    else:
+        proba = 1.0
+    
+    return intent, proba
+
+def handle_ml_intent(intent, text):
+    if intent == "greeting":
+        return func.handle_greeting()
+
+    elif intent == "farewell":
+        return func.handle_farewell()
+
+    elif intent == "time":
+        return func.get_current_time()
+
+    elif intent == "date":
+        return func.get_current_date()
+
+    elif intent == "day":
+        return func.get_current_date("день")
+
+    elif intent == "month":
+        return func.get_current_date("месяц")
+
+    elif intent == "year":
+        return func.get_current_date("год")
+    elif intent == "name":
+        return func.handle_name(text)
+
+    return "Я не уверен, что понял тебя"
 
 def manage_state(text):
     global current_state
@@ -26,6 +65,12 @@ def manage_state(text):
         if func.has_weather_intent(text) and city:
             current_state = "START"
             return func.get_weather(city)
+
+        intent, confidence = predict_intent(text)
+
+        print(confidence)
+        if confidence > 0.6:
+            return handle_ml_intent(intent, text)
 
         return "Я не понимаю"
 
