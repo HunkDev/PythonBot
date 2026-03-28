@@ -9,10 +9,12 @@ nlp = spacy.load("ru_core_news_md")
 current_state = "START"
 
 def predict_intent(text):
-    intent = model.predict([text])[0]
+    doc = nlp(text)
+    vector = doc.vector
+    intent = model.predict([vector])[0]
 
     if hasattr(model, "predict_proba"):
-        proba = model.predict_proba([text]).max()
+        proba = model.predict_proba([vector]).max()
     else:
         proba = 1.0
     
