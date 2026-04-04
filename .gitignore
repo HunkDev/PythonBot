@@ -15,3 +15,6 @@
 /test.py
 bot/key.py
 bot.db
+bot/results
+bot/intent_model
+bot/__pycache__
