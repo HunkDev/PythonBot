@@ -12,7 +12,7 @@ import evaluate
 
 MODEL_NAME = "DeepPavlov/rubert-base-cased"
 
-df = pd.read_csv("big_intent_dataset.csv")
+df = pd.read_csv("extended_intent_dataset.csv")
 
 unique_intents = df['intent'].unique()
 print(f"Уникальных интентов: {len(unique_intents)}")

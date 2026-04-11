@@ -3,11 +3,12 @@ import func
 import spacy
 import torch
 import pandas as pd
+import random
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-MODEL_PATH = "intent_model"
+MODEL_PATH = r"c:\Users\serge\source\repos\Python\AI\bot\intent_model"
 
-df = pd.read_csv("chatbot_dataset.csv")
+df = pd.read_csv(r"c:\Users\serge\source\repos\Python\AI\bot\extended_intent_dataset.csv")
 
 labels = df["intent"].unique()
 
@@ -68,7 +69,24 @@ def handle_ml_intent(intent: str, text: str):
         return func.handle_name(text)
 
     elif intent == "help":
-        return "Чем могу помочь?"
+        features = [
+        "Приветствия и прощания",
+        "Текущее время",
+        "Дата, день, месяц, год",
+        "Простые вычисления",
+        "Погода по городу",
+        "Небольшой разговор"
+        ]
+
+        return "Я умею:\n" + "\n".join(f"• {f}" for f in features)
+    
+    elif intent == "smalltalk":
+        responses = [
+        "Всё хорошо 🙂",
+        "Отлично, спасибо!",
+        "Работаю без перерыва 😄"
+        ]
+        return random.choice(responses)
 
     return "Я не уверен, что понял тебя"
 

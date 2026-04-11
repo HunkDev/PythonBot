@@ -18,3 +18,4 @@ bot.db
 bot/results
 bot/intent_model
 bot/__pycache__
+bot.db
