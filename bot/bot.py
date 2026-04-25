@@ -4,12 +4,25 @@ import func
 import re
 from silero import silero_tts
 from playsound3 import playsound
+from voice import listen
+
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r"[^\w\sа-я]", "", text)
+    return text
 
 if __name__ == "__main__":
     db.init_db()
     while True:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        user_input = input("Вы: ")
+
+        sound_mode = input("Вы хотите использовать голосовой ввод? (y/n): ").strip().lower()
+        
+        if(sound_mode == "y"):
+            print("Говорите:")
+            user_input = clean_text(listen())
+        else:
+            user_input = input("Вы: ")
 
         response = func.process_message(user_input)
 

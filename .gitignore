@@ -20,3 +20,6 @@ bot/intent_model
 bot/__pycache__
 bot.db
 bot.db
+bot/input.wav
+bot/test.wav
+bot/latest_silero_models.yml
